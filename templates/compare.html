@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block title %}
+    Compare
+{% endblock %}
+{% block main %}
+<h3>Ready to analyze</h3>
+<div class="container-fluid">
+<div style="text-align: left">
+<br>
+<form method="post">
+  <p>Sequence: </p>
+  <textarea style="width: 100%" rows="10" name="source_id"></textarea>
+  <br><br>
+  <p>Ortholog sequence: </p>
+  <textarea style="width: 100%" rows="10" name="ortho_id"></textarea>
+  </div>
+  </div>
+  <br><br>
+  <button type="submit" class="btn">Submit</button>
+</form>
+<hr>
+{% endblock %}

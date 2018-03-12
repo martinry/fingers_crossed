@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Intro
+{% endblock %}
+
+{% block main %}
+<h2 style="color: #e6b3b3">Woops!</h2>
+<br>
+<p class="lead">{{ error }}</p>
+<br>
+<form action="{{ url_for('compare') }}">
+    <button class="btn" type="submit" >Please, try again!</button>
+</form>
+
+{% endblock %}
+
