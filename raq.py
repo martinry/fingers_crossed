@@ -5,7 +5,42 @@ import json
 import pyensembl
 import subprocess
 import os
+import itertools
    
+class pfam_register():
+    def __init__(self, 
+                pfam_id,
+                pfam_name,
+                pfam_type):
+        self.pfam_id = pfam_id
+        self.pfam_name = pfam_name
+        self.pfam_type = pfam_type
+        self.positions = []
+    
+    def add_position(self, seq_from, seq_to, significance):
+        new_position = [seq_from, seq_to, significance]
+        if new_position not in self.positions:
+            self.positions.append(new_position)
+            
+    def get_positions(self):
+        return self.positions
+    
+class protein_register():
+    def __init__(self,
+                prot_id):
+        self.prot_id = prot_id
+        self.pfam_register_list = []
+        
+    def add_pfam_register(self, pfam_register):
+        if pfam_register not in self.pfam_register_list:
+            self.pfam_register_list.append(pfam_register)
+        
+    def get_id(self):
+        return self.prot_id
+    
+    def get_pfam_registers_list(self):
+        return self.pfam_register_list
+
 def get_orthologs(source_id):
     server = "http://rest.ensembl.org"
     ext = "/homology/id/" + source_id + "?sequence=cdna;type=orthologues"
@@ -44,9 +79,11 @@ def get_proteins(seq_id):
 
 # make app 
 
+from collections import defaultdict
 def parse_pfam(gene_id):
-    prot_dict = {}
-    os.chdir('data')
+    prot_objects = {}
+    #fam_dom = {}
+    os.chdir('./data')
     fin = gene_id + '.pfam'
     with open(fin) as pfam:
         for line in pfam:
@@ -54,7 +91,7 @@ def parse_pfam(gene_id):
                 line = '\t'.join(line.split())
                 line_array = line.split('\t')
                 
-                line_id = line_array[0]
+                prot_id = line_array[0]
                 seq_from = line_array[1]
                 seq_to = line_array[2]
                 pfam_id = line_array[5]
@@ -62,14 +99,23 @@ def parse_pfam(gene_id):
                 pfam_type = line_array[7]
                 significance = line_array[12]
                 
-                if line_id in prot_dict.keys():
-                    prot_dict[line_array[0]].append([seq_from, seq_to, pfam_id, pfam_name, pfam_type, significance])
+                if prot_id not in list(prot_objects.keys()):
+                    prot_objects[prot_id] = protein_register(prot_id)
+                
+                current_pfams_ids = [i.pfam_id for i in prot_objects[prot_id].get_pfam_registers_list()]
+                
+                if pfam_id not in current_pfams_ids:
+                    pfam_object = pfam_register(pfam_id, pfam_name, pfam_type)
+                    pfam_object.add_position(seq_from, seq_to, significance) 
+                    prot_objects[prot_id].add_pfam_register(pfam_object)
                 else:
-                    prot_dict[line_array[0]] = []
-                    prot_dict[line_array[0]].append([seq_from, seq_to, pfam_id, pfam_name, pfam_type, significance])
+                    for i in prot_objects[prot_id].get_pfam_registers_list():
+                        if i.pfam_id == pfam_id:
+                            i.add_position(seq_from, seq_to, significance)
+                            break
+                    
     os.chdir('..')
-    return prot_dict
-        
+    return(prot_objects)    
 
 app = Flask(__name__)
 
@@ -138,8 +184,17 @@ def compare():
                 ortho_pfam = parse_pfam(ortho_id)
                 source_pfam = parse_pfam(source_id)
                 
-                print(ortho_pfam)
-                print(source_pfam)
+                print('ORTHO')
+                for key, value in ortho_pfam.items():
+                    for i in value.get_pfam_registers_list():
+                        print(key,  i.pfam_id, i.get_positions())
+                print('SOURCE')
+                for key, value in source_pfam.items():
+                    for i in value.get_pfam_registers_list():
+                        print(key,  i.pfam_id, i.get_positions())
+                
+                #print(ortho_pfam)
+                #print(source_pfam)
                 
                 return render_template('ortho_info.html', total_align = total_alignment, source_gene = source_gene, ortho_gene = ortho_gene, source_taxon = source_taxon, ortho_taxon = ortho_taxon, ortho_cigar = ortho_cigar, source_specie = source_specie, ortho_specie = ortho_specie, perc_id = perc_id, ortho_proteins = ortho_proteins, source_proteins = source_proteins, ortho_pfam = ortho_pfam, source_pfam = source_pfam)
             else:

@@ -3,20 +3,14 @@
     Compare
 {% endblock %}
 {% block main %}
-<h3>Ready to analyze</h3>
-<div class="container-fluid">
-<div style="text-align: left">
+<br>
+<p class="lead">Please introduce two orthologs Ensembl ids.</p>
 <br>
 <form method="post">
-  <p>Sequence: </p>
-  <textarea style="width: 100%" rows="10" name="source_id"></textarea>
+  <textarea style="width: 40%" rows="1" name="source_id" style="text-align: center" placeholder="e.g. ENSG00000167785"></textarea>
   <br><br>
-  <p>Ortholog sequence: </p>
-  <textarea style="width: 100%" rows="10" name="ortho_id"></textarea>
-  </div>
-  </div>
+  <textarea style="width: 40%" rows="1" name="ortho_id" placeholder="e.g. ENSG00000167785"></textarea>
   <br><br>
   <button type="submit" class="btn">Submit</button>
 </form>
-<hr>
 {% endblock %}
