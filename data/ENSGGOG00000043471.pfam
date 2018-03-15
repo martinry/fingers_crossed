@@ -1,4 +1,4 @@
-# pfam_scan.pl,  run at Mon Mar 12 21:16:28 2018
+# pfam_scan.pl,  run at Thu Mar 15 21:45:05 2018
 #
 # Copyright (c) 2009 Genome Research Ltd
 # Freely distributed under the GNU 
@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <http://www.gnu.org/licenses/>. 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-#      query sequence file: ENSGGOG00000043471.fasta
+#      query sequence file: ./pfam_test/ENSGGOG00000043471.fasta
 #        searching against: /opt/bio/PFAMdb/Pfam-A.hmm, with cut off -E 1e-5 --domE 1e-5
 #    resolve clan overlaps: on
 #     predict active sites: off

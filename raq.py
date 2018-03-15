@@ -1,12 +1,15 @@
 from flask import Flask, redirect, render_template, request, session
 from flask import url_for, send_from_directory
+from collections import defaultdict
+from pathlib import Path
 import requests, sys
 import json
 import pyensembl
 import subprocess
 import os
 import itertools
-   
+
+app = Flask(__name__)
 class pfam_register():
     def __init__(self, 
                 pfam_id,
@@ -79,11 +82,9 @@ def get_proteins(seq_id):
 
 # make app 
 
-from collections import defaultdict
 def parse_pfam(gene_id):
     prot_objects = {}
-    #fam_dom = {}
-    os.chdir('./data')
+    
     fin = gene_id + '.pfam'
     with open(fin) as pfam:
         for line in pfam:
@@ -114,13 +115,9 @@ def parse_pfam(gene_id):
                             i.add_position(seq_from, seq_to, significance)
                             break
                     
-    os.chdir('..')
     return(prot_objects)    
 
-app = Flask(__name__)
-
 alignment = ''
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -139,9 +136,9 @@ def compare():
             
             json_data = get_orthologs(source_id)
             
-            o_json = open('ortho.json', 'w')
-            o_json.write(str(json_data))
-            o_json.close()
+           # o_json = open('ortho.json', 'w')
+            #o_json.write(str(json_data))
+            #o_json.close()
             
             try:
                 orthologs = [i['target']['id'] for i in json_data['data'][0]['homologies']]    
@@ -174,27 +171,60 @@ def compare():
                         a = i
                 total_alignment = total_alignment[1:]
                 
+                #print('\n\n\n\n\n\n\n' + os.getcwd() + '\n\n\n\n\n\n')
+                directory = os.path.join(os.getcwd(), 'data')
+                os.chdir(directory)
+                
                 ortho_proteins = get_proteins(ortho_id)
                 source_proteins = get_proteins(source_id)     
                 
-                #change directory
-                #subprocess.Popen("pfam_scan.pl -fasta /data/" + ortho_id + ".fasta -outfile /data/" + ortho_id + ".pfam -e_seq 1e-5 -e_dom 1e-5 -dir /opt/bio/PFAMdb")
-                #subprocess.Popen("pfam_scan.pl -fasta /data/" + source_id + ".fasta -outfile /data/" + source_id + ".pfam -e_seq 1e-5 -e_dom 1e-5 -dir /opt/bio/PFAMdb")
+                import paramiko
+                from scp import SCPClient
+                
+                files = [f for f in os.listdir(directory) if f.endswith('fasta')]
+                
+                pfam_files = [f.replace('fasta', 'pfam') for f in files]
+                for f in pfam_files:
+                    print(f)
+                    if Path(f).is_file():
+                        pass
+                    else:
+                        ssh = paramiko.SSHClient()
+                        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                        ssh.connect('130.235.244.18', username='ms1705', password='GaTaCA1705')
+                        scp = SCPClient(ssh.get_transport())
+
+                        print(f)
+                        id_file = f.replace('.pfam', '')
+                        print(id_file)
+                        fasta_f = f.replace('.pfam', '.fasta')
+                        scp.put(fasta_f, 'pfam_test')
+                        print('On server!')
+
+                        command = "pfam_scan.pl -fasta ./pfam_test/" + fasta_f + " -outfile ./pfam_test/" + id_file + ".pfam -e_seq 1e-5 -e_dom 1e-5 -dir /opt/bio/PFAMdb"
+                        print(command)
+                        ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
+                        print(ssh_stderr.read().decode('utf-8'))
+                        while ssh_stdout.channel.recv_exit_status() != 0:
+                            None
+
+                        sftp = ssh.open_sftp()
+                        file_remote = './pfam_test/' + id_file + '.pfam'
+                        file_local = id_file + '.pfam'
+                        sftp.get(file_remote, file_local)
+                        
+                        files_in_remote = sftp.listdir(path='./pfam_test/')
+                        for file in files_in_remote:
+                            sftp.remove('./pfam_test/'+file)
+                        
+                        print('Done!')
+
+                        sftp.close()
+                        ssh.close()
                 
                 ortho_pfam = parse_pfam(ortho_id)
                 source_pfam = parse_pfam(source_id)
-                
-                print('ORTHO')
-                for key, value in ortho_pfam.items():
-                    for i in value.get_pfam_registers_list():
-                        print(key,  i.pfam_id, i.get_positions())
-                print('SOURCE')
-                for key, value in source_pfam.items():
-                    for i in value.get_pfam_registers_list():
-                        print(key,  i.pfam_id, i.get_positions())
-                
-                #print(ortho_pfam)
-                #print(source_pfam)
+                os.chdir('..')
                 
                 return render_template('ortho_info.html', total_align = total_alignment, source_gene = source_gene, ortho_gene = ortho_gene, source_taxon = source_taxon, ortho_taxon = ortho_taxon, ortho_cigar = ortho_cigar, source_specie = source_specie, ortho_specie = ortho_specie, perc_id = perc_id, ortho_proteins = ortho_proteins, source_proteins = source_proteins, ortho_pfam = ortho_pfam, source_pfam = source_pfam)
             else:
@@ -212,3 +242,7 @@ def compare():
         else:
             error = "I'm sorry, the id " + ortho_id + " doesn't seem to be a valid ensembl id."
             return render_template('input_error.html', error = error) # your second id is wrong
+
+
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=5003, debug=True)
