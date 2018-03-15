@@ -75,6 +75,7 @@ def get_proteins(seq_id):
         encoded_proteins.append([ids[i], proteins[i]])
     
     file_name = seq_id + '.fasta'
+    file_name = os.path.join('data', file_name)
     fout = open(file_name, 'w')
     fout.write(r.text)
     
@@ -86,7 +87,10 @@ def parse_pfam(gene_id):
     prot_objects = {}
     
     fin = gene_id + '.pfam'
-    with open(fin) as pfam:
+    
+    directory = (os.path.join(os.getcwd(), 'data'))
+    
+    with open(os.path.join(directory, fin)) as pfam:
         for line in pfam:
             if line[0] != '#' and line != '\n':
                 line = '\t'.join(line.split())
@@ -171,9 +175,7 @@ def compare():
                         a = i
                 total_alignment = total_alignment[1:]
                 
-                #print('\n\n\n\n\n\n\n' + os.getcwd() + '\n\n\n\n\n\n')
-                directory = os.path.join(os.getcwd(), 'data')
-                os.chdir(directory)
+                #os.chdir(directory)
                 
                 ortho_proteins = get_proteins(ortho_id)
                 source_proteins = get_proteins(source_id)     
@@ -181,7 +183,8 @@ def compare():
                 import paramiko
                 from scp import SCPClient
                 
-                files = [f for f in os.listdir(directory) if f.endswith('fasta')]
+                directory = os.path.join(os.getcwd(), 'data')
+                files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('fasta')]
                 
                 pfam_files = [f.replace('fasta', 'pfam') for f in files]
                 for f in pfam_files:
@@ -195,13 +198,13 @@ def compare():
                         scp = SCPClient(ssh.get_transport())
 
                         print(f)
-                        id_file = f.replace('.pfam', '')
+                        id_file = f.split('/')[-1].replace('.pfam', '')
                         print(id_file)
                         fasta_f = f.replace('.pfam', '.fasta')
                         scp.put(fasta_f, 'pfam_test')
                         print('On server!')
 
-                        command = "pfam_scan.pl -fasta ./pfam_test/" + fasta_f + " -outfile ./pfam_test/" + id_file + ".pfam -e_seq 1e-5 -e_dom 1e-5 -dir /opt/bio/PFAMdb"
+                        command = "pfam_scan.pl -fasta ./pfam_test/" + id_file + ".fasta -outfile ./pfam_test/" + id_file + ".pfam -e_seq 1e-5 -e_dom 1e-5 -dir /opt/bio/PFAMdb"
                         print(command)
                         ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
                         print(ssh_stderr.read().decode('utf-8'))
@@ -210,7 +213,9 @@ def compare():
 
                         sftp = ssh.open_sftp()
                         file_remote = './pfam_test/' + id_file + '.pfam'
+                        
                         file_local = id_file + '.pfam'
+                        file_local = os.path.join(directory, file_local)
                         sftp.get(file_remote, file_local)
                         
                         files_in_remote = sftp.listdir(path='./pfam_test/')
@@ -224,7 +229,6 @@ def compare():
                 
                 ortho_pfam = parse_pfam(ortho_id)
                 source_pfam = parse_pfam(source_id)
-                os.chdir('..')
                 
                 return render_template('ortho_info.html', total_align = total_alignment, source_gene = source_gene, ortho_gene = ortho_gene, source_taxon = source_taxon, ortho_taxon = ortho_taxon, ortho_cigar = ortho_cigar, source_specie = source_specie, ortho_specie = ortho_specie, perc_id = perc_id, ortho_proteins = ortho_proteins, source_proteins = source_proteins, ortho_pfam = ortho_pfam, source_pfam = source_pfam)
             else:
