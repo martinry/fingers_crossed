@@ -9,8 +9,14 @@
 <form method="post">
   <textarea style="width: 40%" rows="1" name="source_id" style="text-align: center" placeholder="e.g. ENSG00000167785"></textarea>
   <br><br>
+<h5 style="color: #ad6969">Vs.</h5>
+    <br>
   <textarea style="width: 40%" rows="1" name="ortho_id" placeholder="e.g. ENSG00000167785"></textarea>
   <br><br>
   <button type="submit" class="btn">Submit</button>
 </form>
+<br>
+<br>
+<p class="lead" style="color:#ad6969;display: inline">Don't know exactly the ensembl id? </p><a class="lead" href="{{ url_for('options') }}" style="color:#ad6969;font-weight: 400">Click here!</a>
+
 {% endblock %}

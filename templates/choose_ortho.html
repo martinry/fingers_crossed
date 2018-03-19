@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Intro
+{% endblock %}
+
+{% block main %}
+<br>
+<p class="lead">For {{source_specie}}, we found these posible zinc fingers' orthologs:</p>
+<br>
+<div>
+<form method="post">
+
+    <span class="input-group-addon">Please select</span>
+    <select name="ortho_options" class="selectpicker form-control">
+        {% for ortho in posible_ortho %}
+            <option value="{{ ortho }}">{{ ortho }}</option>
+        {% endfor %}
+    </select>
+    <br>
+<br>
+<br>
+
+<button class="btn" >Next</button>
+</form>
+{% endblock %}
+

@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Intro
+{% endblock %}
+
+{% block main %}
+<br>
+<p class="lead">All zinc fingers found on those species.</p>
+<br>
+<div>
+<form method="post">
+
+    <span class="input-group-addon">Please select: </span>
+    <select name="zf_options" class="selectpicker form-control">
+        {% for zf in zf_options %}
+            <option value="{{ zf }}">{{ zf }}</option>
+        {% endfor %}
+    </select>
+    <br>
+<br>
+<br>
+<button class="btn">Next</button>
+</form>
+{% endblock %}
+

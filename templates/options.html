@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Intro
+{% endblock %}
+
+{% block main %}
+<br>
+<p class="lead">Please select a ensembl dataset.</p>
+<br>
+<div>
+<form method="post">
+
+    <span class="input-group-addon">Please select</span>
+    <select name="source_specie" class="selectpicker form-control">
+        {% for specie in datasets_options %}
+            <option value="{{ specie }}">{{ specie }}</option>
+        {% endfor %}
+    </select>
+    
+<br>
+<br>
+<button class="btn">Next</button>
+</form>
+{% endblock %}
+
